@@ -200,7 +200,7 @@ class Waveform
 
       samples.each_with_index do |sample, x|
         # Half the amplitude goes above zero, half below
-        amplitude = sample * options[:height].to_f
+        amplitude = sample * options[:height].to_f / 2.0
         # If you give ChunkyPNG floats for pixel positions all sorts of things
         # go haywire.
         image.line(x, (zero - amplitude).round, x, (zero + amplitude).round, color)

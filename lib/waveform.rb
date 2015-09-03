@@ -194,7 +194,6 @@ class Waveform
     end
 
     def drawAudio(samples, image, options, color)
-      puts "DRAW AUDIO CALLED"
       # Calling "zero" the middle of the waveform, like there's positive and
       # negative amplitude
       zero = options[:height] / 2.0
@@ -210,7 +209,6 @@ class Waveform
     end
 
     def drawPhonocardiogram(samples, image, options, color)
-      puts "DRAW PHONO CALLED"
       #generally follows drawAudio with minor adjustments to remove mirroring and graph points with negative values (had to channel peaks in order to retain negative values in samples)
 
       zero = options[:height] / 2.0

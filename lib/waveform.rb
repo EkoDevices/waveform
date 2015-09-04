@@ -10,7 +10,7 @@ end
 class Waveform
   DefaultOptions = {
     :method => :peak,
-    :width => 1800,
+    :width => 900,
     :height => 280,
     :background_color => "#666666",
     :color => "#00ccff",

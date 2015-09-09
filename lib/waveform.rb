@@ -97,6 +97,8 @@ class Waveform
       raise ArgumentError.new("No destination filename given for waveform") unless filename
       raise RuntimeError.new("Source audio file '#{source}' not found.") unless File.exist?(source)
       raise RuntimeError.new("Destination file #{filename} exists. Use --force if you want to automatically remove it.") if File.exists?(filename) && !options[:force] === true
+      raise ArgumentError.new("Audio Buffer Size must be an integer") unless options[:audio_buffer_size].is_a? Integer
+
 
       @log = Log.new(options[:logger])
       @log.start!
@@ -134,7 +136,7 @@ class Waveform
 
     private
 
-    def prune_samples(samples, audio_buffer_size)
+    def prune_samples(samples, audio_buffer_size=2)
       samples.each_slice(audio_buffer_size).map(&:last)
     end
 
@@ -158,7 +160,7 @@ class Waveform
 
       RubyAudio::Sound.open(source) do |audio|
         frames_read = 0
-        frames_per_sample = (audio.info.frames.to_f / width.to_f).to_i * audio_buffer_size
+        frames_per_sample = (audio.info.frames.to_f / width.to_f).to_i / audio_buffer_size
         sample = RubyAudio::Buffer.new("float", frames_per_sample, audio.info.channels)
         @log.timed("Sampling #{frames_per_sample} frames per sample: ") do
           while(frames_read = audio.read(sample)) > 0

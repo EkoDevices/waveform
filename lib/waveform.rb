@@ -17,7 +17,7 @@ class Waveform
     :force => false,
     :logger => nil,
     :type => :audio,
-    :samples => :read
+    :samples => :read,
     :audio_buffer_size => 2
   }
 

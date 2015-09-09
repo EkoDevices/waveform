@@ -18,6 +18,7 @@ class Waveform
     :logger => nil,
     :type => :audio,
     :samples => :read
+    :audio_buffer_size => 2
   }
 
   TransparencyMask = "#00ff00"
@@ -78,6 +79,12 @@ class Waveform
     #    Default is :read which means the audio's samples will be created by the gem
     #    When array of samples is provided, assumption is each float will be between -1 and 1
     #
+    #   :audio_buffer_size => resolution of samples, defaulted to 2
+    #    Determines how many samples will be used.
+    #    Example: 2 will graph every other sample
+    #    4 will graph every 4th sample
+    #    1 will graph every sample
+    #
     # Example:
     #   Waveform.generate("Kickstart My Heart.wav", "Kickstart My Heart.png")
     #   Waveform.generate("Kickstart My Heart.wav", "Kickstart My Heart.png", :method => :rms)
@@ -108,6 +115,8 @@ class Waveform
       # perhaps to the point of inaccurately reflecting the actual sound.
       samples = retrieve_samples(source, options)
 
+      samples = prune_samples(samples, options[:audio_buffer_size])
+
       @log.timed("\nDrawing...") do
         # Don't remove the file even if force is true until we're sure the
         # source was readable
@@ -124,6 +133,10 @@ class Waveform
     end
 
     private
+
+    def prune_samples(samples, audio_buffer_size)
+      samples.each_slice(audio_buffer_size).map(&:last)
+    end
 
     def retrieve_samples(source, options)
       if options[:samples] == :read

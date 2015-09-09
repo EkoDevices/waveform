@@ -140,7 +140,7 @@ class Waveform
 
     def retrieve_samples(source, options)
       if options[:samples] == :read
-        samples = frames(source, options[:width], options[:method], options[:type]).collect do |frame|
+        samples = frames(source, options[:width], options[:method], options[:type], options[:audio_buffer_size]).collect do |frame|
           frame.inject(0.0) { |sum, peak| sum + peak } / frame.size
         end
       elsif options[:samples].class == Array
@@ -151,14 +151,14 @@ class Waveform
     # Returns a sampling of frames from the given RubyAudio::Sound using the
     # given method the sample size is determined by the given pixel width --
     # we want one sample frame per horizontal pixel.
-    def frames(source, width, method = :peak, type = :audio)
+    def frames(source, width, method = :peak, type = :audio, audio_buffer_size=2)
       raise ArgumentError.new("Unknown sampling method #{method}") unless [ :peak, :rms ].include?(method)
 
       frames = []
 
       RubyAudio::Sound.open(source) do |audio|
         frames_read = 0
-        frames_per_sample = (audio.info.frames.to_f / width.to_f).to_i
+        frames_per_sample = (audio.info.frames.to_f / width.to_f).to_i * audio_buffer_size
         sample = RubyAudio::Buffer.new("float", frames_per_sample, audio.info.channels)
         @log.timed("Sampling #{frames_per_sample} frames per sample: ") do
           while(frames_read = audio.read(sample)) > 0

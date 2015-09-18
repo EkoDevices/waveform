@@ -231,7 +231,8 @@ class Waveform
       starting_point = [0, (zero - (samples[0] * options[:height].to_f/2.0).round)]
 
       samples.each_with_index do |sample, x|
-        amplitude = sample * options[:height].to_f * 3
+        x = ((options[:width].to_f/samples.length).to_f * x).round
+        amplitude = sample * options[:height].to_f * 1.5
         #connect end of last line with current point in sample data
         image.line(starting_point[0], starting_point[1], x, (zero - amplitude).round, color)
         #update last point data so next line will begin from correct point

@@ -17,7 +17,8 @@ class Waveform
     :force => false,
     :logger => nil,
     :type => :audio,
-    :samples => :read
+    :samples => :read,
+    :audio_buffer_size => 2
   }
 
   TransparencyMask = "#00ff00"
@@ -78,6 +79,12 @@ class Waveform
     #    Default is :read which means the audio's samples will be created by the gem
     #    When array of samples is provided, assumption is each float will be between -1 and 1
     #
+    #   :audio_buffer_size => resolution of samples, defaulted to 2
+    #    Determines how many samples will be used.
+    #    Example: 2 will graph every other sample
+    #    4 will graph every 4th sample
+    #    1 will graph every sample
+    #
     # Example:
     #   Waveform.generate("Kickstart My Heart.wav", "Kickstart My Heart.png")
     #   Waveform.generate("Kickstart My Heart.wav", "Kickstart My Heart.png", :method => :rms)
@@ -90,6 +97,8 @@ class Waveform
       raise ArgumentError.new("No destination filename given for waveform") unless filename
       raise RuntimeError.new("Source audio file '#{source}' not found.") unless File.exist?(source)
       raise RuntimeError.new("Destination file #{filename} exists. Use --force if you want to automatically remove it.") if File.exists?(filename) && !options[:force] === true
+      raise ArgumentError.new("Audio Buffer Size must be an integer") unless options[:audio_buffer_size].is_a? Integer
+
 
       @log = Log.new(options[:logger])
       @log.start!
@@ -108,6 +117,8 @@ class Waveform
       # perhaps to the point of inaccurately reflecting the actual sound.
       samples = retrieve_samples(source, options)
 
+      samples = prune_samples(samples, options[:audio_buffer_size])
+
       @log.timed("\nDrawing...") do
         # Don't remove the file even if force is true until we're sure the
         # source was readable
@@ -125,9 +136,13 @@ class Waveform
 
     private
 
+    def prune_samples(samples, audio_buffer_size=2)
+      samples.each_slice(audio_buffer_size).map(&:last)
+    end
+
     def retrieve_samples(source, options)
       if options[:samples] == :read
-        samples = frames(source, options[:width], options[:method], options[:type]).collect do |frame|
+        samples = frames(source, options[:width], options[:method], options[:type], options[:audio_buffer_size]).collect do |frame|
           frame.inject(0.0) { |sum, peak| sum + peak } / frame.size
         end
       elsif options[:samples].class == Array
@@ -138,14 +153,14 @@ class Waveform
     # Returns a sampling of frames from the given RubyAudio::Sound using the
     # given method the sample size is determined by the given pixel width --
     # we want one sample frame per horizontal pixel.
-    def frames(source, width, method = :peak, type = :audio)
+    def frames(source, width, method = :peak, type = :audio, audio_buffer_size=2)
       raise ArgumentError.new("Unknown sampling method #{method}") unless [ :peak, :rms ].include?(method)
 
       frames = []
 
       RubyAudio::Sound.open(source) do |audio|
         frames_read = 0
-        frames_per_sample = (audio.info.frames.to_f / width.to_f).to_i
+        frames_per_sample = (audio.info.frames.to_f / width.to_f).to_i / audio_buffer_size
         sample = RubyAudio::Buffer.new("float", frames_per_sample, audio.info.channels)
         @log.timed("Sampling #{frames_per_sample} frames per sample: ") do
           while(frames_read = audio.read(sample)) > 0
